@@ -1,0 +1,102 @@
+---
+title: "Bayesian Ranking"
+subtitle: "Interpreting Product Reviews"
+author: "Tobias Heidler"
+date: "21/11/2020"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(ggplot2)
+library(tidyverse)
+library(kableExtra)
+library(scales)
+
+theme_set(
+  theme_dark() +
+    theme(legend.position = "bottom")
+)
+```
+
+## Introduction
+
+- Product Reviews are hard to interpret
+- There is no easy way to know if you should choose between a 4,7 stars review with one hundreds reviews or one with five 5-star reviews
+- And no one considers **you** - the expert - in the rankings
+
+But now we have a solution: **The Bayesian Ranking Tool**
+
+## Technology
+
+- This Tool uses top of the line Bayesian algorithms to help you through your purchasing process
+- Just type in all the votes &
+- Choose how good the product is in **your** view * & 
+- How confident **you** are with your point of view * &
+- How much risk **you** are willing to take
+
+ * Optional!
+
+## Example
+
+```{r}
+tribble(~Name, ~`5 Stars`, ~`4 Stars`, ~`3 Stars`,~`2 Stars`, ~`1 Stars`,
+        "Product 1", 190, 15, 10, 2, 5,
+        "Product 2", 5, 0, 0, 0, 0) %>% 
+  kable() %>% 
+  kable_styling(bootstrap_options = c("striped", "hover"))
+```
+
+**You** consider Product 2 to be slightly better than Product 1. **You** are relatively confident. **You** want to be 90% sure!
+
+## Result
+
+```{r}
+x <- seq(.1,1,.01)
+df1 <- tibble(Stars = x,
+              Name = "Product 1") %>% 
+        mutate(`P(Stars | Votes)` = dbeta(x,
+                                          .8 * 222 + 190 + 15 * 3/4 + 10 * 2/4 + 2 * 1/4 + 5 * 0 + 1, 
+                                          .2*222 + 190 * 0 + 15 * 1/4 + 10 * 2/4 + 2 * 3/4 + 5 * 1 + 1),
+               `P(Stars | Votes)` = `P(Stars | Votes)` / sum(`P(Stars | Votes)`))
+
+df2 <- tibble(Stars = x,
+              Name = "Product 2") %>% 
+        mutate(`P(Stars | Votes)` = dbeta(x,
+                                          .9 * 5 + 6, 
+                                          .1 * 5 + 1),
+               `P(Stars | Votes)` = `P(Stars | Votes)` / sum(`P(Stars | Votes)`))
+
+Posterior.Confidence <- tribble(~Name, ~Limit,
+                                "Product 1", qbeta(.1,
+                                                    .8 * 222 + 190 + 15 * 3/4 + 10 * 2/4 + 2 * 1/4 + 5 * 0, 
+                                                    .2*222 + 190 * 0 + 15 * 1/4 + 10 * 2/4 + 2 * 3/4 + 5 * 1)* 4 + 1,
+                                "Product 2", qbeta(.1,
+                                                    .9 * 5 + 5, 
+                                                    .1 * 5) * 4 + 1)
+Posterior.Data <- df1 %>% 
+                    bind_rows(df2) %>% 
+                    mutate(Stars = Stars * 4 + 1)
+
+ggplot(Posterior.Data,
+                 aes(x = Stars,
+                     y = `P(Stars | Votes)`,
+                     color=Name)) +
+              geom_vline(data=Posterior.Confidence,
+                         aes(xintercept=Limit, color=Name),
+                         linetype="dashed") +
+              geom_line() +
+              scale_color_brewer(type="qual", palette = "Set2") +
+              scale_y_continuous(labels = label_percent()) +
+              coord_cartesian(xlim = c(1,5))
+```
+
+**You** should take Product 2! Bayesian magic at it's best!
+
+## Summary
+
+- The tool can help you with every purchase
+- It is highly customizable and blends **your** expert knowledge and crowd knowledge seamlessly
+- Try it yourself: [Link](https://pteridin.shinyapps.io/RBayesianRanking/)
+
+Happy purchase!
