@@ -51,7 +51,7 @@ tribble(~Name, ~`5 Stars`, ~`4 Stars`, ~`3 Stars`,~`2 Stars`, ~`1 Stars`,
 
 ## Result
 
-```{r}
+```{r, fig.height=2}
 x <- seq(.1,1,.01)
 df1 <- tibble(Stars = x,
               Name = "Product 1") %>% 
@@ -92,8 +92,6 @@ ggplot(Posterior.Data,
 ```
 
 **You** should take Product 2! Bayesian magic at it's best!
-
-## Summary
 
 - The tool can help you with every purchase
 - It is highly customizable and blends **your** expert knowledge and crowd knowledge seamlessly
